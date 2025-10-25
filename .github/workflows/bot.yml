@@ -1,0 +1,39 @@
+name: Telegram Bot
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run bot
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: |
+          python telegram_bot.py
+
+      - name: Commit updated CSV
+        run: |
+          git config --local user.email "bot@github.com"
+          git config --local user.name "GitHub Bot"
+          git add dados.csv
+          git commit -m "update messages" || echo "No changes"
+          git push
