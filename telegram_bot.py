@@ -95,7 +95,7 @@ def handle_text(update: Update, context: CallbackContext):
         update.message.reply_text(
             f"Aposta registrada com sucesso! ✅\n"
             f"Suas dezenas em ordem crescente: {dezenas_fmt}\n\n"
-            f"Agora, por favor, envie o **nome do apostador** para finalizar o registro."
+            f"Agora, por favor, envie o **nome do apostador** para seguirmos para o pagamento."
         )
         context.user_data["fase"] = "aguardando_nome"
         return
