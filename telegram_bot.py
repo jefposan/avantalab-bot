@@ -54,12 +54,13 @@ def handle_message(update: Update, context: CallbackContext):
 
     # Se enviou dezenas, valida
     valido, resultado = validar_dezenas(msg)
-    if valido:
-        dezenas_formatadas = ", ".join(f"{d:02d}" for d in resultado)
-        update.message.reply_text(
-            f"Aposta registrada com sucesso! ✅\nSuas dezenas: {dezenas_formatadas}"
-        )
-        salvar_csv(user_id, username, dezenas_formatadas)
+        if valido:
+            # Ordena as dezenas em ordem crescente
+            resultado.sort()
+            dezenas_formatadas = ", ".join(f"{d:02d}" for d in resultado)
+            update.message.reply_text(f"Aposta registrada com sucesso! ✅\nSuas dezenas em ordem crescente: {dezenas_formatadas}")
+            salvar_csv(user_id, username, dezenas_formatadas)
+
     else:
         update.message.reply_text(f"❌ {resultado}")
 
