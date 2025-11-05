@@ -4,11 +4,14 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import Updater, MessageHandler, Filters, CallbackContext
 
+# Token do Bot vindo da variável de ambiente
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
+
+# Nome do arquivo CSV
 CSV_FILE = "dados.csv"
 
 
-# === Garante que o arquivo CSV existe ===
+# === Garante que o arquivo CSV exista ===
 def ensure_csv():
     if not os.path.exists(CSV_FILE):
         with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
@@ -16,59 +19,62 @@ def ensure_csv():
             writer.writerow(["timestamp", "user_id", "username", "text"])
 
 
+# === Salva a mensagem no CSV ===
+def salvar_csv(user_id, username, texto):
+    ensure_csv()
+    with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(
+            [datetime.utcnow().isoformat(), user_id, username, texto])
+
+
 # === Valida as dezenas enviadas ===
 def validar_dezenas(texto):
     try:
-        dezenas = list(map(int, texto.replace(",", " ").split()))
+        dezenas = [
+            int(d) for d in texto.replace(",", " ").split() if d.isdigit()
+        ]
         if len(dezenas) != 10:
-            return False, "Você precisa enviar exatamente 10 dezenas."
+            return False, "Você deve informar exatamente 10 dezenas."
         if len(set(dezenas)) != 10:
-            return False, "Não repita números. Todos devem ser diferentes."
+            return False, "Não repita dezenas."
         if any(d < 1 or d > 60 for d in dezenas):
-            return False, "Todos os números devem estar entre 1 e 60."
+            return False, "As dezenas devem estar entre 1 e 60."
         return True, dezenas
     except ValueError:
-        return False, "Envie apenas números separados por espaço (ex: 5 12 23 ...)."
+        return False, "Use apenas números separados por espaço ou vírgula."
 
 
-# === Armazena dados no CSV ===
-def salvar_csv(user_id, username, texto):
-    with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow([datetime.now().isoformat(), user_id, username, texto])
-
-
-# === Quando o usuário envia mensagem ===
+# === Trata mensagens recebidas ===
 def handle_message(update: Update, context: CallbackContext):
-    msg = update.message.text.strip()
-    user_id = update.message.from_user.id
-    username = update.message.from_user.username or update.message.from_user.first_name
+    msg = update.message
+    texto = msg.text.strip()
+    user_id = msg.from_user.id
+    username = msg.from_user.username or msg.from_user.first_name
 
-    # Verifica se a pessoa está iniciando uma aposta
-    if "apost" in msg.lower():  # ex: "quero apostar"
+    if texto.lower() in ["aposta", "jogar", "apostar", "quero apostar"]:
         update.message.reply_text(
-            "Obrigado pela aposta! 🎟️\nPor favor, envie 10 dezenas de 01 a 60 separadas por espaço."
+            "🎟️ Obrigado pela aposta!\nPor favor, envie 10 dezenas de 01 a 60 separadas por espaço."
         )
-        salvar_csv(user_id, username, msg)
         return
 
-    # Se enviou dezenas, valida
-    valido, resultado = validar_dezenas(msg)
-        if valido:
-            # Ordena as dezenas em ordem crescente
-            resultado.sort()
-            dezenas_formatadas = ", ".join(f"{d:02d}" for d in resultado)
-            update.message.reply_text(f"Aposta registrada com sucesso! ✅\nSuas dezenas em ordem crescente: {dezenas_formatadas}")
-            salvar_csv(user_id, username, dezenas_formatadas)
-
+    valido, resultado = validar_dezenas(texto)
+    if valido:
+        # Ordena as dezenas numericamente
+        resultado = sorted([int(d) for d in resultado])
+        dezenas_formatadas = ", ".join(f"{d:02d}" for d in resultado)
+        update.message.reply_text(
+            f"Aposta registrada com sucesso! ✅\nSuas dezenas em ordem crescente: {dezenas_formatadas}"
+        )
+        salvar_csv(user_id, username, dezenas_formatadas)
     else:
-        update.message.reply_text(f"❌ {resultado}")
+        update.message.reply_text(f"⚠️ {resultado}")
 
 
 # === Inicializa o bot ===
 def main():
     ensure_csv()
-    updater = Updater(TOKEN, use_context=True)
+    updater = Updater(TOKEN)
     dp = updater.dispatcher
     dp.add_handler(
         MessageHandler(Filters.text & ~Filters.command, handle_message))
