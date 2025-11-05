@@ -3,9 +3,11 @@ import os
 
 app = Flask(__name__)
 
+
 @app.route('/')
 def home():
     return '<h3>✅ Servidor rodando. Acesse /dados.csv para visualizar o arquivo.</h3>'
+
 
 @app.route('/dados.csv')
 def baixar_csv():
@@ -15,5 +17,6 @@ def baixar_csv():
     else:
         return "Arquivo não encontrado.", 404
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=5000)
