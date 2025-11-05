@@ -1,21 +1,30 @@
-timestamp,user_id,username,text
-2025-11-05T01:56:44.214371,855411252,Jeff Ferreira,/revoke
-2025-11-05T02:00:28.554227,855411252,Jeff Ferreira,Jefx teste
-2025-11-05T02:24:01.385059,855411252,Jeff,quero apostar
-2025-11-05T02:25:01.054344,855411252,Jeff,"01, 56, 40, 02, 45, 30, 18, 15, 13, 07"
-2025-11-05T02:28:40.603958,855411252,Jeff,"01, 56, 40, 02, 45, 30, 18, 15, 13, 07"
-2025-11-05T02:33:37.017716,855411252,Jeff,"01, 56, 40, 02, 45, 30, 18, 15, 13, 07"
-2025-11-05T02:34:28.871047,855411252,Jeff,"01, 05, 04, 08, 09, 03, 20, 45, 50, 30"
-2025-11-05T02:43:45.670151,855411252,Jeff,"01, 05, 10, 50, 54, 20, 44, 60, 53, 18"
-2025-11-05T02:46:59.146537,855411252,Jeff,aposta
-2025-11-05T02:47:51.630980,855411252,Jeff,"01, 05, 06, 03, 08, 40, 56, 20, 17, 04"
-2025-11-05T02:56:15.621892,855411252,Jeff,"03, 04, 05, 08, 09, 10, 12, 13, 45, 60"
-2025-11-05T03:02:38.586179,855411252,Jeff,"01, 02, 03, 04, 05, 06, 07, 08, 09, 10"
-2025-11-05T03:03:31.719499,855411252,Jeff,"01, 02, 03, 04, 05, 06, 07, 08, 09, 10"
-2025-11-05T03:03:43.138397,855411252,Jeff,"01, 02, 03, 04, 05, 06, 07, 08, 09, 10"
-2025-11-05T03:06:16.269090,855411252,Jeff,"01, 02, 03, 04, 05, 06, 07, 08, 09, 10"
-2025-11-05T03:10:43.979049,855411252,Jeff,"01, 02, 03, 04, 05, 06, 07, 08, 09, 10"
-2025-11-05T03:15:16.155443,855411252,Jeff,Jefposan,"01, 02, 03, 04, 05, 06, 07, 08, 09, 10"
-2025-11-05T03:25:23.769928,855411252,Jeff,Jefferson Tridium,01,02,03,04,05,06,07,08,09,10
-2025-11-05T03:28:07.147772,855411252,Jeff,Jeff Tridium,01,02,03,04,05,06,07,08,09,10
-2025-11-05T03:29:42.021586,855411252,Jeff,Jeff Tridium,01,02,03,04,05,06,07,08,09,10
+# === CSV CONFIG ===
+CSV_FILE = "dados.csv"
+
+def ensure_csv():
+    # cria um CSV NOVO com cabeçalho completo (UTF-8 c/ BOM p/ Excel)
+    if not os.path.exists(CSV_FILE):
+        with open(CSV_FILE, "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f, delimiter=",")
+            w.writerow([
+                "timestamp_utc","user_id","username","nome_apostador",
+                "d1","d2","d3","d4","d5","d6","d7","d8","d9","d10"
+            ])
+
+def salvar_csv(user_id: int, username: str, nome_apostador: str, dezenas_fmt: str):
+    ensure_csv()
+
+    # extrai e normaliza 10 dezenas
+    numeros = re.findall(r"\d{1,2}", dezenas_fmt)
+    dezenas = [int(n) for n in numeros if 1 <= int(n) <= 60][:10]
+    dezenas.sort()
+    while len(dezenas) < 10:
+        dezenas.append("")
+
+    dcols = [f"{d:02d}" if d != "" else "" for d in dezenas]
+
+    row = [datetime.utcnow().isoformat(), user_id, username, nome_apostador] + dcols
+
+    with open(CSV_FILE, "a", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f, delimiter=",")
+        w.writerow(row)
